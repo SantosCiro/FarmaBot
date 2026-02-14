@@ -1,0 +1,15 @@
+# Ambiente virtual
+.venv/
+
+# Banco local
+backend/tickets.db
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Sistema
+.DS_Store

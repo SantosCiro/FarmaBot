@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "pergunta": "Qual é o horário de funcionamento da farmácia?",
+    "keywords": ["horário", "funciona", "abre", "fecha", "funcionamento"],
+    "resposta": "Nossa farmácia funciona de segunda a sábado, das 8h às 20h. Aos domingos e feriados, das 9h às 14h."
+  },
+  {
+    "id": 2,
+    "pergunta": "Vocês fazem entrega? Como funciona a retirada?",
+    "keywords": ["entrega", "delivery", "retirada", "buscar", "pedido"],
+    "resposta": "Sim! Fazemos entrega a domicílio. Você também pode fazer o pedido e retirar na loja. Para entrega, informe seu endereço."
+  },
+  {
+    "id": 3,
+    "pergunta": "Vocês têm o medicamento X disponível?",
+    "keywords": ["tem", "disponível", "medicamento", "remédio"],
+    "resposta": "Para verificar a disponibilidade do medicamento, informe o nome completo do medicamento (e se possível, a dosagem)."
+  },
+  {
+    "id": 4,
+    "pergunta": "Onde fica a farmácia e como entrar em contato?",
+    "keywords": ["endereço", "localização", "onde fica", "contato", "telefone", "whatsapp"],
+    "resposta": "Estamos localizados na Rua Exemplo, nº 123. Contato/WhatsApp: (00) 00000-0000."
+  },
+  {
+    "id": 5,
+    "pergunta": "Preciso de receita? Tem genérico?",
+    "keywords": ["receita", "prescrição", "genérico", "similar"],
+    "resposta": "Alguns medicamentos exigem receita médica. Também trabalhamos com genéricos quando disponíveis. Informe o nome do medicamento para orientarmos sobre receita e opções."
+  }
+]
