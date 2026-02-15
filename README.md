@@ -1,5 +1,7 @@
 FarmaBot 🧠💊
 
+“📌 Demo local: abra frontend/index.html e frontend/tickets.html”
+
 Chatbot de atendimento inicial para farmácias com escalonamento humano e painel de tickets
 
 O FarmaBot é um chatbot web desenvolvido para automatizar o atendimento inicial de farmácias e pequenos negócios da área da saúde.
