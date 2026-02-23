@@ -9,14 +9,20 @@ from pydantic import BaseModel
 
 from db import init_db, create_ticket, list_tickets
 
+# --------------------
+# Carrega FAQ
+# --------------------
 FAQ_PATH = Path(__file__).parent / "faq.json"
+
 
 def load_faq():
     with open(FAQ_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 FAQ = load_faq()
-# guarda usuários que precisam informar dados antes de abrir ticket
+
+# Guarda usuários aguardando contato
 PENDING_CONTACT = {}
 
 ESCALATE_KEYWORDS = [
@@ -24,42 +30,51 @@ ESCALATE_KEYWORDS = [
     "problema", "não resolveu", "não entendi", "falar com atendente", "suporte"
 ]
 
-MEDICAL_DISCLAIMER = (
-    "⚠️ Importante: sou um assistente virtual de atendimento. "
-    "Não realizo diagnóstico nem indico medicamentos. "
-    "Se for emergência, procure atendimento médico imediatamente."
-)
-
+# --------------------
+# Modelos
+# --------------------
 class ChatIn(BaseModel):
     message: str
+
 
 class ChatOut(BaseModel):
     reply: str
     escalated: bool = False
     ticket_id: Optional[int] = None
 
+
+# --------------------
+# App
+# --------------------
 app = FastAPI(title="FarmaBot MVP")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ok no MVP
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def startup():
     init_db()
 
+
+# --------------------
+# Helpers
+# --------------------
 def normalize(text: str) -> str:
     text = text.lower().strip()
     text = re.sub(r"\s+", " ", text)
     return text
 
+
 def should_escalate(msg: str) -> bool:
     m = normalize(msg)
     return any(k in m for k in ESCALATE_KEYWORDS)
+
 
 def best_faq_answer(msg: str):
     m = normalize(msg)
@@ -77,31 +92,48 @@ def best_faq_answer(msg: str):
 
     if best and best_score >= 1:
         return best["resposta"], best_score
+
     return None, 0
 
+
+# --------------------
+# Endpoints
+# --------------------
 @app.post("/chat", response_model=ChatOut)
 def chat(payload: ChatIn):
     msg = payload.message.strip()
     if not msg:
         return ChatOut(reply="Pode me dizer como posso ajudar? 😊")
 
-    user_id = "default"  # MVP simples (depois vira sessão/IP)
+    user_id = "default"  # MVP simples
 
-    # Se estamos aguardando nome/telefone
+    # ============================
+    # Aguardando nome / telefone
+    # ============================
     if user_id in PENDING_CONTACT:
-        text = normalize(msg)
         name = None
         phone = None
 
-        # tentativa simples de extrair telefone
-        import re
-        m = re.search(r"(\d{8,13})", text)
-        if m:
-            phone = m.group(1)
+        # Remove tudo que não é número
+        digits = re.sub(r"\D", "", msg)
 
-        # se não veio telefone, assume que é nome
-        if not phone:
-            name = msg.strip()
+        # Remove DDI do Brasil se vier (+55)
+        if digits.startswith("55") and len(digits) in (12, 13):
+            digits = digits[2:]
+
+        # Se tiver tamanho plausível, considera telefone
+        if len(digits) in (8, 9, 10, 11):
+            phone = digits
+
+        # Extrai nome removendo o telefone digitado
+        name_candidate = msg
+        if phone:
+            name_candidate = re.sub(re.escape(digits), "", name_candidate)
+
+        name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
+
+        if name_candidate:
+            name = name_candidate
 
         data = PENDING_CONTACT.pop(user_id)
         tid = create_ticket(name, phone, data["message"])
@@ -112,19 +144,25 @@ def chat(payload: ChatIn):
             ticket_id=tid
         )
 
+    # ============================
     # Pedido explícito de humano
+    # ============================
     if should_escalate(msg):
         PENDING_CONTACT[user_id] = {"message": msg}
         return ChatOut(
             reply="Certo! Para te encaminhar, pode me informar seu *nome* e *telefone*? 😊"
         )
 
-    # Tenta responder pela FAQ
+    # ============================
+    # FAQ
+    # ============================
     answer, _ = best_faq_answer(msg)
     if answer:
         return ChatOut(reply=answer)
 
-    # Fallback: não entendeu → pede contato
+    # ============================
+    # Fallback
+    # ============================
     PENDING_CONTACT[user_id] = {"message": msg}
     return ChatOut(
         reply="Não consegui te ajudar com isso agora. Pode me informar seu *nome* e *telefone* para eu encaminhar a um atendente? 😊"
