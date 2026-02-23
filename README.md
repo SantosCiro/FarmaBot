@@ -1,5 +1,9 @@
 FarmaBot 🧠💊
 
+🎥 **Demonstração em vídeo:**  
+https://youtu.be/ogz0HUaN8Cc
+
+
 “📌 Demo local: abra frontend/index.html e frontend/tickets.html”
 
 Chatbot de atendimento inicial para farmácias com escalonamento humano e painel de tickets
