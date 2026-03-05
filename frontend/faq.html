@@ -1,192 +1,233 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FarmaBot - FAQ Admin</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#f2f2f2; margin:0; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
-    .card { background:#fff; border-radius: 12px; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.08); margin-bottom: 12px; }
-    h1 { margin: 0 0 8px; font-size: 20px; }
-    .row { display:flex; gap:10px; flex-wrap: wrap; align-items: center; }
-    input, textarea { width:100%; padding:10px; border:1px solid #ddd; border-radius: 10px; }
-    textarea { min-height: 70px; resize: vertical; }
-    button { padding: 10px 14px; border:0; border-radius: 10px; cursor:pointer; }
-    .btn { background:#111; color:#fff; }
-    .btn2 { background:#eaeaea; }
-    .danger { background:#c62828; color:#fff; }
-    .mini { font-size:12px; color:#666; }
-    .item { border-top:1px solid #eee; padding-top:12px; margin-top:12px; }
-    .cols { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    @media (max-width:700px){ .cols{ grid-template-columns: 1fr; } }
-    .topbar { display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap: wrap; }
-    .pill { background:#f6f6f6; padding:6px 10px; border-radius: 999px; font-size: 12px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FarmaBot - FAQ Admin</title>
+
+<style>
+
+body{
+  font-family: Arial, sans-serif;
+  background:#f2f2f2;
+  margin:0;
+}
+
+/* NAVBAR */
+
+.nav{
+  background:#0f172a;
+  padding:10px 16px;
+  color:white;
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.nav a{
+  color:white;
+  text-decoration:none;
+}
+
+.nav a:hover{
+  text-decoration:underline;
+}
+
+/* LAYOUT */
+
+.wrap{
+  max-width:900px;
+  margin:0 auto;
+  padding:16px;
+  padding-top:12px;
+}
+
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:16px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+h2{
+  margin-top:0;
+}
+
+input{
+  padding:10px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  width:100%;
+}
+
+textarea{
+  padding:10px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  width:100%;
+  resize:vertical;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+button{
+  padding:8px 12px;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+/* TABELA */
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+}
+
+th,td{
+  border-bottom:1px solid #eee;
+  padding:10px;
+  text-align:left;
+}
+
+th{
+  background:#f7f7f7;
+}
+
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="topbar">
-        <h1>FAQ Admin (FarmaBot Pro)</h1>
-        <div class="row">
-          <span class="pill">API: http://127.0.0.1:8000</span>
-          <button class="btn2" id="reloadBtn">Recarregar</button>
-        </div>
-      </div>
 
-      <p class="mini">
-        Dica: em <b>keywords</b>, separe por <b>|</b>. Ex: <code>horário|abre|fecha</code>
-      </p>
+<div class="nav">
+<b>FarmaBot</b> |
+<a href="index.html">Chat</a> |
+<a href="tickets.html">Tickets</a> |
+<a href="faq.html">FAQ Admin</a>
+</div>
 
-      <div class="cols">
-        <div>
-          <label><b>Keywords</b></label>
-          <input id="newKeywords" placeholder="ex: horário|abre|fecha" />
-        </div>
-        <div>
-          <label><b>Resposta</b></label>
-          <textarea id="newAnswer" placeholder="Digite a resposta..."></textarea>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <button class="btn" id="addBtn">Adicionar FAQ</button>
-        <span class="mini" id="msg"></span>
-      </div>
-    </div>
+<div class="wrap">
 
-    <div class="card">
-      <h1>FAQs cadastradas</h1>
-      <div id="list"></div>
-    </div>
-  </div>
+<div class="card">
+
+<h2>Gerenciar FAQ</h2>
+
+<div class="row">
+<input id="keywords" placeholder="Palavras-chave (ex: horario|abre|fecha)">
+</div>
+
+<div class="row">
+<textarea id="answer" rows="3" placeholder="Resposta"></textarea>
+</div>
+
+<div class="row">
+<button onclick="createFAQ()">Adicionar FAQ</button>
+<button onclick="loadFAQ()">Atualizar</button>
+</div>
+
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Keywords</th>
+<th>Resposta</th>
+<th>Criado em</th>
+</tr>
+</thead>
+
+<tbody id="faq"></tbody>
+
+</table>
+
+</div>
+</div>
 
 <script>
-const API = "http://127.0.0.1:8000";
 
-const elList = document.getElementById("list");
-const elMsg = document.getElementById("msg");
+const API="http://127.0.0.1:8000"
 
-function showMsg(text) {
-  elMsg.textContent = text;
-  setTimeout(() => elMsg.textContent = "", 2500);
-}
+async function loadFAQ(){
 
-async function apiGetFaq() {
-  const r = await fetch(`${API}/faq`);
-  return r.json();
-}
+  try{
 
-async function apiAddFaq(keywords, answer) {
-  const r = await fetch(`${API}/faq`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({keywords, answer})
-  });
-  return r.json();
-}
+    const res=await fetch(`${API}/faq`)
+    const data=await res.json()
 
-async function apiUpdateFaq(id, keywords, answer) {
-  const r = await fetch(`${API}/faq/${id}`, {
-    method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({keywords, answer})
-  });
-  return r.json();
-}
+    const tbody=document.getElementById("faq")
+    tbody.innerHTML=""
 
-async function apiDeleteFaq(id) {
-  const r = await fetch(`${API}/faq/${id}`, { method: "DELETE" });
-  return r.json();
-}
+    data.faq.forEach(f=>{
 
-function render(items) {
-  elList.innerHTML = "";
-  if (!items.length) {
-    elList.innerHTML = `<p class="mini">Nenhuma FAQ encontrada.</p>`;
-    return;
+      const tr=document.createElement("tr")
+
+      tr.innerHTML=`
+      <td>${f.id}</td>
+      <td>${f.keywords}</td>
+      <td>${f.answer}</td>
+      <td>${f.created_at}</td>
+      `
+
+      tbody.appendChild(tr)
+
+    })
+
+  }catch(e){
+
+    alert("Erro ao conectar na API. Backend está rodando?")
+
   }
 
-  for (const it of items) {
-    const div = document.createElement("div");
-    div.className = "item";
+}
 
-    div.innerHTML = `
-      <div class="mini">ID: <b>${it.id}</b> • criado em: ${it.created_at || "-"}</div>
-      <div class="cols" style="margin-top:8px;">
-        <div>
-          <label><b>Keywords</b></label>
-          <input data-k="${it.id}" value="${(it.keywords || "").replaceAll('"','&quot;')}" />
-        </div>
-        <div>
-          <label><b>Resposta</b></label>
-          <textarea data-a="${it.id}">${it.answer || ""}</textarea>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <button class="btn" data-save="${it.id}">Salvar</button>
-        <button class="danger" data-del="${it.id}">Apagar</button>
-        <span class="mini" data-status="${it.id}"></span>
-      </div>
-    `;
+async function createFAQ(){
 
-    elList.appendChild(div);
+  const keywords=document.getElementById("keywords").value.trim()
+  const answer=document.getElementById("answer").value.trim()
+
+  if(!keywords || !answer){
+    alert("Preencha keywords e resposta")
+    return
   }
 
-  // binds
-  elList.querySelectorAll("[data-save]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = btn.getAttribute("data-save");
-      const kw = elList.querySelector(`[data-k="${id}"]`).value.trim();
-      const ans = elList.querySelector(`[data-a="${id}"]`).value.trim();
-      const st = elList.querySelector(`[data-status="${id}"]`);
+  try{
 
-      st.textContent = "Salvando...";
-      const res = await apiUpdateFaq(id, kw, ans);
-      st.textContent = res.ok ? "Salvo ✅" : "Falhou ❌";
-      setTimeout(() => st.textContent = "", 2500);
-    });
-  });
+    await fetch(`${API}/faq`,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        keywords:keywords,
+        answer:answer
+      })
+    })
 
-  elList.querySelectorAll("[data-del]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = btn.getAttribute("data-del");
-      const ok = confirm("Tem certeza que deseja apagar esta FAQ?");
-      if (!ok) return;
+    document.getElementById("keywords").value=""
+    document.getElementById("answer").value=""
 
-      const res = await apiDeleteFaq(id);
-      if (res.ok) {
-        showMsg("FAQ apagada ✅");
-        await load();
-      } else {
-        showMsg("Falhou ao apagar ❌");
-      }
-    });
-  });
+    loadFAQ()
+
+  }catch(e){
+
+    alert("Erro ao salvar FAQ")
+
+  }
+
 }
 
-async function load() {
-  const data = await apiGetFaq();
-  render(data.faq || []);
-}
+loadFAQ()
 
-document.getElementById("reloadBtn").addEventListener("click", load);
-
-document.getElementById("addBtn").addEventListener("click", async () => {
-  const kw = document.getElementById("newKeywords").value.trim();
-  const ans = document.getElementById("newAnswer").value.trim();
-  if (!kw || !ans) return showMsg("Preencha keywords e resposta.");
-
-  const res = await apiAddFaq(kw, ans);
-  if (res.ok === false) return showMsg("Falhou ao adicionar ❌");
-
-  document.getElementById("newKeywords").value = "";
-  document.getElementById("newAnswer").value = "";
-  showMsg("FAQ adicionada ✅");
-  await load();
-});
-
-load();
 </script>
+
 </body>
 </html>
