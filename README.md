@@ -1,143 +1,137 @@
-FarmaBot 🧠💊
+# FarmaBot Pro v1.0 🧠💊
 
-🎥 **Demonstração em vídeo:**  
+Chatbot de atendimento automatizado para farmácias e pequenos negócios da área da saúde.
+
+O FarmaBot responde perguntas frequentes de clientes, encaminha solicitações para atendimento humano quando necessário e registra todos os atendimentos em um sistema de tickets.
+
+Este projeto foi desenvolvido como base para um micro-SaaS de automação de atendimento.
+
+---
+
+# 🎥 Demonstração
+
+Vídeo mostrando o funcionamento do sistema:
+
 https://youtu.be/ogz0HUaN8Cc
 
+---
 
-“📌 Demo local: abra frontend/index.html e frontend/tickets.html”
+# 🚀 Funcionalidades
 
-Chatbot de atendimento inicial para farmácias com escalonamento humano e painel de tickets
+## 💬 Chat automatizado
+- Responde perguntas frequentes
+- Busca respostas na base de conhecimento (FAQ)
+- Detecta quando o usuário precisa de atendimento humano
+- Encaminha atendimento automaticamente
 
-O FarmaBot é um chatbot web desenvolvido para automatizar o atendimento inicial de farmácias e pequenos negócios da área da saúde.
-Ele responde perguntas frequentes, identifica quando não consegue ajudar e encaminha automaticamente o atendimento para um humano, registrando tudo em um painel de tickets.
+## 🎫 Sistema de tickets
+- Solicita nome e telefone do cliente
+- Cria ticket automaticamente
+- Registra atendimento no banco de dados
+- Painel web para visualizar tickets
 
-⚠️ O bot não realiza diagnósticos nem indica medicamentos. Ele atua apenas no atendimento operacional inicial.
+## ⚙️ Painel administrativo de FAQ
+CRUD completo de perguntas e respostas:
 
-🚀 Funcionalidades
+- Criar perguntas
+- Listar perguntas
+- Editar respostas
+- Apagar perguntas
 
-💬 Chat de atendimento online (simulador de WhatsApp no navegador)
+Todas as alterações são persistidas no banco de dados.
 
-📋 Respostas automáticas para perguntas frequentes:
+## 💾 Persistência de dados
+- Tickets armazenados em SQLite
+- FAQ armazenada em banco de dados
+- Dados mantidos mesmo após reiniciar o sistema
 
-Horário de funcionamento
+---
 
-Entrega e retirada
+# 🛠 Tecnologias utilizadas
 
-Disponibilidade de medicamentos
+Backend
+- Python
+- FastAPI
 
-Endereço e contato
+Frontend
+- HTML
+- CSS
+- JavaScript
 
-Receita médica e genéricos
+Banco de dados
+- SQLite
 
-🧠 Escalonamento inteligente
+---
 
-Quando o bot não entende ou o usuário pede um humano
-
-Solicita nome e telefone antes de abrir o ticket
-
-🎫 Abertura automática de tickets
-
-📊 Painel de tickets no navegador
-
-💾 Armazenamento local com SQLite
-
-💰 Zero custo para rodar localmente
-
-🛠️ Tecnologias Utilizadas
-
-Backend: Python + FastAPI
-
-Frontend: HTML, CSS e JavaScript puro
-
-Banco de dados: SQLite
-
-Servidor: Uvicorn
-
-📂 Estrutura do Projeto
-farmabot/
-├── backend/
-│   ├── app.py          # API e lógica do chatbot
-│   ├── db.py           # Banco de dados e tickets
-│   ├── faq.json        # Base de conhecimento (FAQ)
-│   ├── requirements.txt
-│   └── tickets.db      # Criado automaticamente
-│
-└── frontend/
-    ├── index.html      # Chat do usuário
-    └── tickets.html   # Painel de tickets
-
-▶️ Como Rodar o Projeto Localmente
-1️⃣ Clonar o repositório
-git clone <url-do-repositorio>
-cd farmabot/backend
-
-2️⃣ Criar e ativar ambiente virtual
-python -m venv .venv
-.venv\Scripts\activate   # Windows
-
-3️⃣ Instalar dependências
-pip install -r requirements.txt
-
-4️⃣ Iniciar o servidor
-uvicorn app:app --reload
+# 🏗 Arquitetura do Projeto
 
 
-A API ficará disponível em:
+---
 
-http://127.0.0.1:8000
+# ▶️ Executando o projeto localmente
 
-🌐 Abrindo as Interfaces
-
-Chat do usuário:
-Abra frontend/index.html no navegador
-
-Painel de tickets:
-Abra frontend/tickets.html no navegador
-
-🧪 Fluxo de Teste Sugerido
-
-Abra o chat
-
-Digite:
-
-quero falar com atendente
+### 1️⃣ Clonar o repositório
 
 
-O bot pedirá nome e telefone
-
-Informe algo como:
-
-João 21999998888
+### 2️⃣ Criar ambiente virtual
 
 
-Abra o painel de tickets e clique em Atualizar
+### 3️⃣ Instalar dependências
 
-O ticket aparecerá no topo da lista ✅
 
-🎯 Objetivo do Projeto
+### 4️⃣ Rodar servidor
 
-Este projeto foi desenvolvido como:
 
-📌 Portfólio prático
+Servidor disponível em:
 
-📌 MVP de produto real
 
-📌 Base para futuras integrações (WhatsApp, IA generativa, multiusuário)
+---
 
-🔮 Próximos Passos (Evoluções Possíveis)
+# 🌐 Interfaces do sistema
 
-Integração com WhatsApp Business API
+Chat do usuário
 
-Uso de IA para entendimento semântico das mensagens
 
-Autenticação de atendentes
+Painel de tickets
 
-Multiempresas (várias farmácias)
 
-Dashboard com métricas de atendimento
+Painel administrativo da FAQ
 
-👤 Autor
 
-Desenvolvido por Ciro Leonardo dos Santos Barbosa
-📍 Brasil
-💡 Foco em Dados, Automação e Inteligência Artificial aplicada a negócios
+---
+
+# 🎯 Objetivo do projeto
+
+Este projeto foi desenvolvido como base para um sistema de automação de atendimento voltado para pequenos negócios.
+
+A ideia é evoluir o sistema para um micro-SaaS com recursos como:
+
+- multiempresa
+- integração com WhatsApp
+- análise de atendimentos
+- uso de IA para entendimento semântico das perguntas
+
+---
+
+# 🔮 Roadmap
+
+Versão 1.1
+- status de tickets
+- exportação CSV
+
+Versão 2.0
+- autenticação de administrador
+- multiempresa
+- integração com WhatsApp
+- IA para entendimento semântico
+
+---
+
+# 👤 Autor
+
+Ciro Leonardo dos Santos Barbosa
+
+Foco em:
+- Automação
+- Inteligência Artificial
+- Sistemas de dados aplicados a negócios
