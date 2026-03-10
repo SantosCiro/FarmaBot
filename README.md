@@ -38,12 +38,33 @@ CRUD completo de perguntas e respostas:
 - Editar respostas
 - Apagar perguntas
 
-Todas as alterações são persistidas no banco de dados.
-
 ## 💾 Persistência de dados
 - Tickets armazenados em SQLite
 - FAQ armazenada em banco de dados
 - Dados mantidos mesmo após reiniciar o sistema
+
+---
+
+# 🏢 Multiempresa (Arquitetura SaaS)
+
+O FarmaBot foi projetado com suporte a múltiplas empresas utilizando um identificador de empresa (`company_slug`) na URL.
+
+Cada empresa possui seus próprios dados isolados no sistema.
+
+Exemplos de endpoints:
+
+/poupalar/chat  
+/poupalar/tickets  
+/poupalar/faq  
+
+Cada empresa possui:
+
+- FAQ própria
+- tickets próprios
+- histórico de atendimento separado
+- chatbot configurável
+
+Essa arquitetura permite que o FarmaBot evolua para um **SaaS de automação de atendimento para farmácias**.
 
 ---
 
