@@ -5,54 +5,193 @@ from datetime import datetime
 DB_PATH = Path(__file__).parent / "tickets.db"
 
 
+def get_conn():
+    return sqlite3.connect(DB_PATH)
+
+
 def init_db():
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
+    conn = get_conn()
+    cur = conn.cursor()
 
-        # Tabela de tickets
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS tickets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                created_at TEXT NOT NULL,
-                name TEXT,
-                phone TEXT,
-                message TEXT NOT NULL,
-                status TEXT NOT NULL
-            )
-        """)
+    # empresas
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS companies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """)
 
-        # Tabela de FAQ (editável)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS faq (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                keywords TEXT NOT NULL,
-                answer TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
+    # FAQ por empresa
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS faq (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER NOT NULL,
+        keywords TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(company_id) REFERENCES companies(id)
+    )
+    """)
 
-        conn.commit()
+    # tickets por empresa
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        name TEXT,
+        phone TEXT,
+        message TEXT NOT NULL,
+        status TEXT NOT NULL,
+        FOREIGN KEY(company_id) REFERENCES companies(id)
+    )
+    """)
+
+    conn.commit()
+    conn.close()
 
 
-def create_ticket(name: str | None, phone: str | None, message: str) -> int:
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO tickets (created_at, name, phone, message, status) VALUES (?, ?, ?, ?, ?)",
-            (datetime.utcnow().isoformat(), name, phone, message, "open")
+# -------------------------
+# empresas
+# -------------------------
+
+def get_company_by_slug(slug: str):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT id, slug, name FROM companies WHERE slug=?",
+        (slug,)
+    )
+
+    row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    return {
+        "id": row[0],
+        "slug": row[1],
+        "name": row[2]
+    }
+
+
+def create_company(slug: str, name: str):
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO companies (slug, name, created_at) VALUES (?, ?, ?)",
+        (slug, name, datetime.utcnow().isoformat())
+    )
+
+    conn.commit()
+    company_id = cur.lastrowid
+    conn.close()
+
+    return company_id
+
+
+def get_or_create_company(slug: str):
+
+    company = get_company_by_slug(slug)
+
+    if company:
+        return company["id"]
+
+    return create_company(slug, slug.capitalize())
+
+
+# -------------------------
+# FAQ
+# -------------------------
+
+def list_faq(company_id: int):
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT id, keywords, answer FROM faq WHERE company_id=? ORDER BY id DESC",
+        (company_id,)
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return [
+        {"id": r[0], "keywords": r[1], "answer": r[2]}
+        for r in rows
+    ]
+
+
+def add_faq(company_id: int, keywords: str, answer: str):
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO faq (company_id, keywords, answer, created_at) VALUES (?, ?, ?, ?)",
+        (company_id, keywords, answer, datetime.utcnow().isoformat())
+    )
+
+    conn.commit()
+    faq_id = cur.lastrowid
+    conn.close()
+
+    return faq_id
+
+
+# -------------------------
+# tickets
+# -------------------------
+
+def create_ticket(company_id: int, name: str | None, phone: str | None, message: str):
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO tickets (company_id, created_at, name, phone, message, status) VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            company_id,
+            datetime.utcnow().isoformat(),
+            name,
+            phone,
+            message,
+            "open"
         )
-        conn.commit()
-        return cur.lastrowid
+    )
+
+    conn.commit()
+    ticket_id = cur.lastrowid
+    conn.close()
+
+    return ticket_id
 
 
-def list_tickets(limit: int = 50):
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT id, created_at, name, phone, message, status FROM tickets ORDER BY id DESC LIMIT ?",
-            (limit,)
-        )
-        rows = cur.fetchall()
+def list_tickets(company_id: int, limit: int = 50):
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT id, created_at, name, phone, message, status
+        FROM tickets
+        WHERE company_id=?
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (company_id, limit)
+    )
+
+    rows = cur.fetchall()
+    conn.close()
 
     return [
         {
@@ -65,67 +204,3 @@ def list_tickets(limit: int = 50):
         }
         for r in rows
     ]
-
-
-# ---------------------------
-# FAQ (Banco)
-# keywords fica tipo: "horário|abre|fecha"
-# ---------------------------
-def list_faq():
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT id, keywords, answer, created_at FROM faq ORDER BY id DESC")
-        rows = cur.fetchall()
-
-    return [
-        {"id": r[0], "keywords": r[1], "answer": r[2], "created_at": r[3]}
-        for r in rows
-    ]
-
-
-def add_faq(keywords: str, answer: str) -> int:
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO faq (keywords, answer) VALUES (?, ?)",
-            (keywords, answer)
-        )
-        conn.commit()
-        return cur.lastrowid
-
-def update_faq(faq_id: int, keywords: str, answer: str) -> bool:
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            "UPDATE faq SET keywords = ?, answer = ? WHERE id = ?",
-            (keywords, answer, faq_id)
-        )
-        conn.commit()
-        return cur.rowcount > 0
-
-def delete_faq(faq_id: int) -> bool:
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM faq WHERE id = ?", (faq_id,))
-        conn.commit()
-        return cur.rowcount > 0
-
-def seed_faq_if_empty(default_faq_items: list[dict]):
-    """
-    default_faq_items: lista com dicts no formato:
-    {"keywords": ["a","b"], "resposta": "texto"}
-    """
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM faq")
-        count = cur.fetchone()[0]
-
-        if count == 0:
-            for item in default_faq_items:
-                keywords = "|".join(item.get("keywords", []))
-                answer = item.get("resposta", "")
-                cur.execute(
-                    "INSERT INTO faq (keywords, answer) VALUES (?, ?)",
-                    (keywords, answer)
-                )
-            conn.commit()

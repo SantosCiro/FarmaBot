@@ -6,22 +6,19 @@
 <title>FarmaBot - Tickets</title>
 
 <style>
-
 body{
   font-family: Arial, sans-serif;
   background:#f2f2f2;
   margin:0;
 }
 
-/* Navbar */
-
 .nav{
   background:#0f172a;
   padding:10px 16px;
   color:white;
-  position:sticky;
-  top:0;
-  z-index:10;
+  display:flex;
+  align-items:center;
+  gap:14px;
 }
 
 .nav a{
@@ -32,8 +29,6 @@ body{
 .nav a:hover{
   text-decoration:underline;
 }
-
-/* layout */
 
 .wrap{
   max-width:900px;
@@ -64,105 +59,101 @@ button:hover{
   opacity:.9;
 }
 
-/* tabela */
-
 table{
   width:100%;
   border-collapse:collapse;
   margin-top:12px;
 }
 
-th,td{
+th, td{
   border-bottom:1px solid #eee;
   padding:10px;
   text-align:left;
+  vertical-align:top;
 }
 
 th{
   background:#f7f7f7;
 }
 
+.small{
+  color:#666;
+  font-size:12px;
+  margin-top:8px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="nav">
-<b>FarmaBot</b> |
-<a href="index.html">Chat</a> |
-<a href="tickets.html">Tickets</a> |
-<a href="faq.html">FAQ Admin</a>
+  <b>FarmaBot</b> |
+  <span id="companyLabel">Empresa: ...</span> |
+  <a id="chatLink" href="#">Chat</a>
+  <a id="ticketsLink" href="#">Tickets</a>
+  <a id="faqLink" href="#">FAQ Admin</a>
 </div>
 
 <div class="wrap">
+  <div class="card">
+    <h2>Painel de Tickets</h2>
+    <button onclick="loadTickets()">Atualizar</button>
+    <div class="small" id="companyInfo"></div>
 
-<div class="card">
-
-<h2>Painel de Tickets</h2>
-
-<button onclick="loadTickets()">Atualizar</button>
-
-<table>
-
-<thead>
-<tr>
-<th>ID</th>
-<th>Data</th>
-<th>Nome</th>
-<th>Telefone</th>
-<th>Mensagem</th>
-<th>Status</th>
-</tr>
-</thead>
-
-<tbody id="tickets"></tbody>
-
-</table>
-
-</div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data</th>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Mensagem</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tickets"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
+const API = "http://127.0.0.1:8000";
+const params = new URLSearchParams(window.location.search);
+const company = params.get("c") || "poupalar";
+document.getElementById("chatLink").href = `index.html?c=${company}`;
+document.getElementById("ticketsLink").href = `tickets.html?c=${company}`;
+document.getElementById("faqLink").href = `faq.html?c=${company}`;
+document.getElementById("companyLabel").textContent = `Empresa: ${company}`;
 
-const API="http://127.0.0.1:8000"
+async function loadTickets() {
+  try {
+    const res = await fetch(`${API}/${company}/tickets`);
+    const data = await res.json();
 
-async function loadTickets(){
+    const tbody = document.getElementById("tickets");
+    tbody.innerHTML = "";
 
-  try{
+    (data.tickets || []).forEach(t => {
+      const tr = document.createElement("tr");
 
-    const res=await fetch(`${API}/tickets`)
-    const data=await res.json()
+      tr.innerHTML = `
+        <td>${t.id}</td>
+        <td>${t.created_at}</td>
+        <td>${t.name || ""}</td>
+        <td>${t.phone || ""}</td>
+        <td>${t.message}</td>
+        <td>${t.status}</td>
+      `;
 
-    const tbody=document.getElementById("tickets")
-    tbody.innerHTML=""
+      tbody.appendChild(tr);
+    });
 
-    data.tickets.forEach(t=>{
-
-      const tr=document.createElement("tr")
-
-      tr.innerHTML=`
-      <td>${t.id}</td>
-      <td>${t.created_at}</td>
-      <td>${t.name||""}</td>
-      <td>${t.phone||""}</td>
-      <td>${t.message}</td>
-      <td>${t.status}</td>
-      `
-
-      tbody.appendChild(tr)
-
-    })
-
-  }catch(e){
-
-    alert("Erro ao conectar na API. Backend está rodando?")
-
+  } catch (e) {
+    alert("Erro ao conectar na API. Backend está rodando?");
   }
-
 }
 
-loadTickets()
-
+loadTickets();
 </script>
 
 </body>

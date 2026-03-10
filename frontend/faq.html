@@ -19,9 +19,9 @@ body{
   background:#0f172a;
   padding:10px 16px;
   color:white;
-  position:sticky;
-  top:0;
-  z-index:10;
+  display:flex;
+  align-items:center;
+  gap:14px;
 }
 
 .nav a{
@@ -109,10 +109,11 @@ th{
 <body>
 
 <div class="nav">
-<b>FarmaBot</b> |
-<a href="index.html">Chat</a> |
-<a href="tickets.html">Tickets</a> |
-<a href="faq.html">FAQ Admin</a>
+  <b>FarmaBot</b> |
+  <span id="companyLabel">Empresa: ...</span> |
+  <a id="chatLink" href="#">Chat</a>
+  <a id="ticketsLink" href="#">Tickets</a>
+  <a id="faqLink" href="#">FAQ Admin</a>
 </div>
 
 <div class="wrap">
@@ -154,13 +155,20 @@ th{
 
 <script>
 
-const API="http://127.0.0.1:8000"
+const API = "http://127.0.0.1:8000";
+
+const params = new URLSearchParams(window.location.search);
+const company = params.get("c") || "poupalar";
+document.getElementById("chatLink").href = `index.html?c=${company}`;
+document.getElementById("ticketsLink").href = `tickets.html?c=${company}`;
+document.getElementById("faqLink").href = `faq.html?c=${company}`;
+document.getElementById("companyLabel").textContent = `Empresa: ${company}`;
 
 async function loadFAQ(){
 
   try{
 
-    const res=await fetch(`${API}/faq`)
+    const res=await fetch(`${API}/${company}/faq`)
     const data=await res.json()
 
     const tbody=document.getElementById("faq")
