@@ -131,7 +131,7 @@ th{
 </div>
 
 <div class="row">
-<button onclick="createFAQ()">Adicionar FAQ</button>
+<button onclick="addFaq()">Adicionar FAQ</button>
 <button onclick="loadFAQ()">Atualizar</button>
 </div>
 
@@ -209,7 +209,7 @@ async function createFAQ(){
 
   try{
 
-    await fetch(`${API}/faq`,{
+    await fetch(`${API}/${company}/faq`,{
       method:"POST",
       headers:{
         "Content-Type":"application/json"
