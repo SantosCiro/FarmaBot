@@ -120,7 +120,7 @@ th{
 const API = "http://127.0.0.1:8000";
 const params = new URLSearchParams(window.location.search);
 const company = params.get("c") || "poupalar";
-document.getElementById("chatLink").href = `index.html?c=${company}`;
+document.getElementById("chatLink").href = `/?c=${company}`;
 document.getElementById("ticketsLink").href = `tickets.html?c=${company}`;
 document.getElementById("faqLink").href = `faq.html?c=${company}`;
 document.getElementById("companyLabel").textContent = `Empresa: ${company}`;
