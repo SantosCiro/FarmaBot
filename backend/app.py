@@ -176,3 +176,12 @@ def create_faq(company_slug: str, payload: FaqIn):
 @app.get("/")
 def home():
     return FileResponse(FRONTEND_DIR / "index.html")
+
+@app.get("/tickets.html")
+def tickets_page():
+    return FileResponse(FRONTEND_DIR / "tickets.html")
+
+
+@app.get("/faq.html")
+def faq_page():
+    return FileResponse(FRONTEND_DIR / "faq.html")
