@@ -182,7 +182,7 @@ async function loadFAQ(){
       <td>${f.id}</td>
       <td>${f.keywords}</td>
       <td>${f.answer}</td>
-      <td>${f.created_at}</td>
+      <td>${f.created_at || "-"}</td>
       `
 
       tbody.appendChild(tr)
