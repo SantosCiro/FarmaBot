@@ -1,10 +1,15 @@
+import json
 import re
+
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
+from pydantic import BaseModel
 from db import (
     init_db,
     get_or_create_company,
@@ -13,6 +18,9 @@ from db import (
     list_faq,
     add_faq,
 )
+
+BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
 ESCALATE_KEYWORDS = [
     "humano", "atendente", "pessoa", "urgente", "reclama", "reclamação",
@@ -36,6 +44,7 @@ class FaqIn(BaseModel):
 
 
 app = FastAPI(title="FarmaBot MVP")
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -163,3 +172,7 @@ def create_faq(company_slug: str, payload: FaqIn):
     company_id = get_or_create_company(company_slug)
     faq_id = add_faq(company_id, payload.keywords.strip(), payload.answer.strip())
     return {"ok": True, "id": faq_id}
+
+@app.get("/")
+def home():
+    return FileResponse(FRONTEND_DIR / "index.html")
