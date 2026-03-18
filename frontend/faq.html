@@ -155,7 +155,7 @@ th{
 
 <script>
 
-const API = "http://127.0.0.1:8000";
+const API = window.location.origin;
 
 const params = new URLSearchParams(window.location.search);
 const company = params.get("c") || "poupalar";
