@@ -1,6 +1,7 @@
 import json
 import re
 
+from openai import OpenAI
 from pathlib import Path
 from typing import Optional
 
@@ -19,6 +20,7 @@ from db import (
     add_faq,
 )
 
+client = OpenAI()
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
@@ -95,6 +97,27 @@ def best_faq_answer(company_id: int, msg: str):
 
     return None, 0
 
+def ai_answer(message: str) -> str:
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Você é um atendente de farmácia. Responda de forma clara, objetiva e útil."
+                },
+                {
+                    "role": "user",
+                    "content": message
+                }
+            ],
+            temperature=0.7
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return None
 
 @app.on_event("startup")
 def startup():
@@ -153,9 +176,16 @@ def chat(company_slug: str, payload: ChatIn):
     if answer:
         return ChatOut(reply=answer)
 
+    # tenta IA antes de escalar
+    ai_reply = ai_answer(msg)
+
+    if ai_reply:
+    return ChatOut(reply=ai_reply)
+
+    # se IA falhar, aí sim escala
     PENDING_CONTACT[user_id] = {"message": msg}
     return ChatOut(
-        reply="Não consegui te ajudar com isso agora. Pode me informar seu *nome* e *telefone* para eu encaminhar a um atendente? 😊"
+    reply="Não consegui te ajudar com isso agora. Pode me informar seu *nome* e *telefone* para eu encaminhar a um atendente? 😊"
     )
 
 
