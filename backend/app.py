@@ -117,6 +117,7 @@ def ai_answer(message: str) -> str:
         return response.choices[0].message.content
 
     except Exception as e:
+        print("ERRO IA:", e)  # 👈 ESSENCIAL
         return None
 
 @app.on_event("startup")
