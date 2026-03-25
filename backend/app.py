@@ -180,7 +180,7 @@ def chat(company_slug: str, payload: ChatIn):
     ai_reply = ai_answer(msg)
 
     if ai_reply:
-    return ChatOut(reply=ai_reply)
+    	return ChatOut(reply=ai_reply)
 
     # se IA falhar, aí sim escala
     PENDING_CONTACT[user_id] = {"message": msg}
