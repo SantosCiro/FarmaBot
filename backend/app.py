@@ -136,13 +136,17 @@ def chat(company_slug: str, payload: ChatIn):
     user_id = company_slug  # separa estado por empresa
 
     if user_id in PENDING_CONTACT:
-        name = payload.name
-        phone = payload.phone
+    	# só continua se tiver número (telefone)
+    	digits = re.sub(r"\D", "", msg)
 
-        # fallback: se não veio dos campos, tenta extrair da mensagem
+    	if len(digits) < 8:
+        	# não é contato → volta pro fluxo normal (FAQ/IA)
+        	pass
+    	else:
+        	name = payload.name
+        	phone = payload.phone
+
         if not name or not phone:
-            digits = re.sub(r"\D", "", msg)
-
             if digits.startswith("55") and len(digits) in (12, 13):
                 digits = digits[2:]
 
@@ -157,6 +161,15 @@ def chat(company_slug: str, payload: ChatIn):
 
             if name_candidate:
                 name = name or name_candidate
+
+        data = PENDING_CONTACT.pop(user_id)
+        tid = create_ticket(company_id, name, phone, data["message"])
+
+        return ChatOut(
+            reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
+            escalated=True,
+            ticket_id=tid
+        )
 
         data = PENDING_CONTACT.pop(user_id)
         tid = create_ticket(company_id, name, phone, data["message"])
