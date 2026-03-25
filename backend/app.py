@@ -136,31 +136,39 @@ def chat(company_slug: str, payload: ChatIn):
     user_id = company_slug  # separa estado por empresa
 
     if user_id in PENDING_CONTACT:
-    	# só continua se tiver número (telefone)
-    	digits = re.sub(r"\D", "", msg)
+    digits = re.sub(r"\D", "", msg)
 
-    	if len(digits) < 8:
-        	# não é contato → volta pro fluxo normal (FAQ/IA)
-        	pass
-    	else:
-        	name = payload.name
-        	phone = payload.phone
+    # só cria ticket se tiver telefone válido
+    if len(digits) >= 8:
+        name = payload.name
+        phone = payload.phone
 
-        if not name or not phone:
+        if not phone:
             if digits.startswith("55") and len(digits) in (12, 13):
                 digits = digits[2:]
 
             if len(digits) in (8, 9, 10, 11):
-                phone = phone or digits
+                phone = digits
 
-            name_candidate = msg
-            if phone:
-                name_candidate = re.sub(re.escape(phone), "", name_candidate)
+        name_candidate = msg
+        if phone:
+            name_candidate = re.sub(re.escape(phone), "", name_candidate)
 
-            name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
+        name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
 
-            if name_candidate:
-                name = name or name_candidate
+        if name_candidate:
+            name = name or name_candidate
+
+        data = PENDING_CONTACT.pop(user_id)
+        tid = create_ticket(company_id, name, phone, data["message"])
+
+        return ChatOut(
+            reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
+            escalated=True,
+            ticket_id=tid
+        )
+
+    # se NÃO for telefone → continua fluxo normal
 
         data = PENDING_CONTACT.pop(user_id)
         tid = create_ticket(company_id, name, phone, data["message"])
