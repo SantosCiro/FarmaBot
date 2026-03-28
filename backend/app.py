@@ -1,5 +1,6 @@
 import json
 import re
+import unicodedata
 
 from openai import OpenAI
 from pathlib import Path
@@ -64,7 +65,14 @@ PENDING_CONTACT = {}
 
 def normalize(text: str) -> str:
     text = text.lower().strip()
+
+    # remove acentos
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in text if not unicodedata.combining(c))
+
+    # remove espaços extras
     text = re.sub(r"\s+", " ", text)
+
     return text
 
 
