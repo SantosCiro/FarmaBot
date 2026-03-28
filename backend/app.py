@@ -97,27 +97,41 @@ def best_faq_answer(company_id: int, msg: str):
 
     return None, 0
 
-def ai_answer(message: str) -> str:
+def ai_answer(company_id: int, message: str) -> str:
     try:
+        faq_items = list_faq(company_id)
+
+        faq_text = "FAQ da farmácia:\n"
+        for item in faq_items:
+            faq_text += f"- {item['keywords']}: {item['answer']}\n"
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
-                    "content": "Você é um atendente de farmácia. Responda de forma clara, objetiva e útil."
+                    "content": f"""
+Você é um atendente de farmácia.
+
+Use apenas as informações abaixo para responder:
+
+{faq_text}
+
+Se a resposta não estiver no FAQ, diga que não tem essa informação e ofereça encaminhar para um atendente.
+"""
                 },
                 {
                     "role": "user",
                     "content": message
                 }
             ],
-            temperature=0.7
+            temperature=0.3
         )
 
         return response.choices[0].message.content
 
     except Exception as e:
-        print("ERRO IA:", e)  # 👈 ESSENCIAL
+        print("ERRO IA:", e)
         return None
 
 @app.on_event("startup")
@@ -183,7 +197,7 @@ def chat(company_slug: str, payload: ChatIn):
     # =========================
     # 3. IA (fallback inteligente)
     # =========================
-    ai_reply = ai_answer(msg)
+    ai_reply = ai_answer(company_id, msg)
 
     if ai_reply:
         return ChatOut(reply=ai_reply)
