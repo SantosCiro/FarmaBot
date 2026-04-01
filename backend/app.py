@@ -197,14 +197,6 @@ def chat(company_slug: str, payload: ChatIn):
     return ChatOut(
         reply="Preciso também do seu *telefone* para continuar, ok? 😊"
     )
-
-        # =========================
-        # NÃO TEM TELEFONE → pede
-        # =========================
-        return ChatOut(
-            reply="Preciso também do seu *telefone* para continuar, ok? 😊"
-        )
-
     # =========================
     # 2. ESCALAR (ANTES DE TUDO)
     # =========================
