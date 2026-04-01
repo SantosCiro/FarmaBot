@@ -161,39 +161,39 @@ def chat(company_slug: str, payload: ChatIn):
     # 1. Se está aguardando contato
     # =========================
     if user_id in PENDING_CONTACT:
-        digits = re.sub(r"\D", "", msg)
+    digits = re.sub(r"\D", "", msg)
 
-        # só cria ticket se tiver telefone válido
-        if len(digits) >= 8:
-            name = payload.name
-            phone = payload.phone
+    # =========================
+    # TEM TELEFONE → cria ticket
+    # =========================
+    if len(digits) >= 8:
+        name = payload.name
+        phone = digits
 
-            if not phone:
-                if digits.startswith("55") and len(digits) in (12, 13):
-                    digits = digits[2:]
+        if phone.startswith("55") and len(phone) in (12, 13):
+            phone = phone[2:]
 
-                if len(digits) in (8, 9, 10, 11):
-                    phone = digits
+        name_candidate = re.sub(r"\d+", "", msg)
+        name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
 
-            name_candidate = msg
-            if phone:
-                name_candidate = re.sub(re.escape(phone), "", name_candidate)
+        if name_candidate:
+            name = name_candidate
 
-            name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
+        data = PENDING_CONTACT.pop(user_id)
+        tid = create_ticket(company_id, name, phone, data["message"])
 
-            if name_candidate:
-                name = name_candidate
+        return ChatOut(
+            reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
+            escalated=True,
+            ticket_id=tid
+        )
 
-            data = PENDING_CONTACT.pop(user_id)
-            tid = create_ticket(company_id, name, phone, data["message"])
-
-            return ChatOut(
-                reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
-                escalated=True,
-                ticket_id=tid
-            )
-
-        # NÃO é telefone → continua fluxo normal (não retorna aqui)
+    # =========================
+    # NÃO TEM TELEFONE → pede
+    # =========================
+    return ChatOut(
+        reply="Preciso também do seu *telefone* para continuar, ok? 😊"
+    )
 
     # =========================
     # 2. ESCALAR (ANTES DE TUDO)
