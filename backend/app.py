@@ -161,42 +161,46 @@ def chat(company_slug: str, payload: ChatIn):
     # 1. Se está aguardando contato
     # =========================
     if user_id in PENDING_CONTACT:
+        data = PENDING_CONTACT[user_id]
         digits = re.sub(r"\D", "", msg)
 
         # =========================
-        # TEM TELEFONE → cria ticket
+        # NÃO TEM NOME AINDA → CAPTURA
         # =========================
-        if len(digits) >= 8:
-            phone = digits
-
-            # remove código do Brasil se vier
-            if phone.startswith("55") and len(phone) in (12, 13):
-                phone = phone[2:]
-
-            # remove telefone da mensagem para extrair nome
-            name_candidate = msg.replace(digits, "").strip()
-
-            # limpa caracteres extras
-            name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
-
-            # define nome
-            name = name_candidate if name_candidate else "Cliente"
-
-            data = PENDING_CONTACT.pop(user_id)
-            tid = create_ticket(company_id, name, phone, data["message"])
-
+        if not data.get("name") and len(digits) < 8:
+            data["name"] = msg.strip()
             return ChatOut(
-                reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
-                escalated=True,
-                ticket_id=tid,
-            )
-
-        # =========================
-        # NÃO TEM TELEFONE → pede (só quem já está em fila de contato)
-        # =========================
-        return ChatOut(
-            reply="Preciso também do seu *telefone* para continuar, ok? 😊"
+                reply="Perfeito! Agora preciso do seu *telefone* 😊"
         )
+
+    # =========================
+    # TEM TELEFONE → FINALIZA
+    # =========================
+    if len(digits) >= 8:
+        phone = digits
+
+        if phone.startswith("55") and len(phone) in (12, 13):
+            phone = phone[2:]
+
+        name = data.get("name") or "Cliente"
+
+        original_message = data["message"]
+        PENDING_CONTACT.pop(user_id)
+
+        tid = create_ticket(company_id, name, phone, original_message)
+
+        return ChatOut(
+            reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
+            escalated=True,
+            ticket_id=tid
+        )
+
+    # =========================
+    # NÃO ENTENDEU → REPETE
+    # =========================
+    return ChatOut(
+        reply="Pode me informar seu *telefone* para continuar? 😊"
+    )
 
     # =========================
     # 2. ESCALAR (ANTES DE TUDO)
