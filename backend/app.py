@@ -182,7 +182,7 @@ def chat(company_slug: str, payload: ChatIn):
             name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
 
             if name_candidate:
-                name = name or name_candidate
+                name = name_candidate
 
             data = PENDING_CONTACT.pop(user_id)
             tid = create_ticket(company_id, name, phone, data["message"])

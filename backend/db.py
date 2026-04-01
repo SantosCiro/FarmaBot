@@ -108,7 +108,17 @@ def list_tickets(company_id):
     cur.close()
     conn.close()
 
-    return rows
+    return [
+    {
+        "id": r[0],
+        "created_at": r[1],
+        "name": r[2],
+        "phone": r[3],
+        "message": r[4],
+        "status": r[5]
+    }
+    for r in rows
+]
 
 # =========================
 # FAQ
