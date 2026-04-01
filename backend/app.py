@@ -196,33 +196,33 @@ def chat(company_slug: str, payload: ChatIn):
         # NÃO é telefone → continua fluxo normal (não retorna aqui)
 
     # =========================
-    # 2. FAQ
+    # 2. ESCALAR (ANTES DE TUDO)
+    # =========================
+    if should_escalate(msg):
+        PENDING_CONTACT[user_id] = {"message": msg}
+        return ChatOut(
+            reply="Certo! Para te encaminhar, pode me informar seu *nome* e *telefone*? 😊"
+        )
+
+    # =========================
+    # 3. FAQ
     # =========================
     answer, _ = best_faq_answer(company_id, msg)
     if answer:
         return ChatOut(reply=answer)
 
     # =========================
-    # 3. IA (fallback inteligente)
+    # 4. IA
     # =========================
     ai_reply = ai_answer(company_id, msg)
-
     if ai_reply:
         return ChatOut(reply=ai_reply)
-
-    # =========================
-    # 4. Escalar para humano (último recurso)
-    # =========================
-    PENDING_CONTACT[user_id] = {"message": msg}
-    return ChatOut(
-        reply="Não consegui te ajudar com isso agora. Pode me informar seu *nome* e *telefone* para eu encaminhar a um atendente? 😊"
-    )
 
 
 @app.get("/{company_slug}/tickets")
 def tickets(company_slug: str, limit: int = 50):
     company_id = get_or_create_company(company_slug)
-    return {"tickets": list_tickets(company_id, limit=limit)}
+    return {"tickets": list_tickets(company_id)}
 
 
 @app.get("/{company_slug}/faq")
