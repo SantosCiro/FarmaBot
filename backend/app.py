@@ -163,37 +163,37 @@ def chat(company_slug: str, payload: ChatIn):
     if user_id in PENDING_CONTACT:
         digits = re.sub(r"\D", "", msg)
 
-    # =========================
-    # TEM TELEFONE → cria ticket
-    # =========================
-    if len(digits) >= 8:
-        name = payload.name
-        phone = digits
+        # =========================
+        # TEM TELEFONE → cria ticket
+        # =========================
+        if len(digits) >= 8:
+            name = payload.name
+            phone = digits
 
-        if phone.startswith("55") and len(phone) in (12, 13):
-            phone = phone[2:]
+            if phone.startswith("55") and len(phone) in (12, 13):
+                phone = phone[2:]
 
-        name_candidate = re.sub(r"\d+", "", msg)
-        name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
+            name_candidate = re.sub(r"\d+", "", msg)
+            name_candidate = re.sub(r"[-() +]+", " ", name_candidate).strip()
 
-        if name_candidate:
-            name = name_candidate
+            if name_candidate:
+                name = name_candidate
 
-        data = PENDING_CONTACT.pop(user_id)
-        tid = create_ticket(company_id, name, phone, data["message"])
+            data = PENDING_CONTACT.pop(user_id)
+            tid = create_ticket(company_id, name, phone, data["message"])
 
+            return ChatOut(
+                reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
+                escalated=True,
+                ticket_id=tid
+            )
+
+        # =========================
+        # NÃO TEM TELEFONE → pede
+        # =========================
         return ChatOut(
-            reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
-            escalated=True,
-            ticket_id=tid
+            reply="Preciso também do seu *telefone* para continuar, ok? 😊"
         )
-
-    # =========================
-    # NÃO TEM TELEFONE → pede
-    # =========================
-    return ChatOut(
-        reply="Preciso também do seu *telefone* para continuar, ok? 😊"
-    )
 
     # =========================
     # 2. ESCALAR (ANTES DE TUDO)
