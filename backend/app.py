@@ -188,15 +188,16 @@ def chat(company_slug: str, payload: ChatIn):
             return ChatOut(
                 reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
                 escalated=True,
-                ticket_id=tid
+                ticket_id=tid,
+            )
+
+        # =========================
+        # NÃO TEM TELEFONE → pede (só quem já está em fila de contato)
+        # =========================
+        return ChatOut(
+            reply="Preciso também do seu *telefone* para continuar, ok? 😊"
         )
 
-    # =========================
-    # NÃO TEM TELEFONE → pede
-    # =========================
-    return ChatOut(
-        reply="Preciso também do seu *telefone* para continuar, ok? 😊"
-    )
     # =========================
     # 2. ESCALAR (ANTES DE TUDO)
     # =========================
