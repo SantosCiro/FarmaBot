@@ -171,29 +171,30 @@ def chat(company_slug: str, payload: ChatIn):
             data["name"] = msg.strip()
             return ChatOut(
                 reply="Perfeito! Agora preciso do seu *telefone* 😊"
-        )
+            )
 
-    # =========================
-    # TEM TELEFONE → FINALIZA
-    # =========================
-    if len(digits) >= 8:
-        phone = digits
+        # =========================
+        # TEM TELEFONE → FINALIZA
+        # =========================
+        if len(digits) >= 8:
+            phone = digits
 
-        if phone.startswith("55") and len(phone) in (12, 13):
-            phone = phone[2:]
+            if phone.startswith("55") and len(phone) in (12, 13):
+                phone = phone[2:]
 
-        name = data.get("name") or "Cliente"
+            name = data.get("name") or "Cliente"
 
-        original_message = data["message"]
-        PENDING_CONTACT.pop(user_id)
+            original_message = data["message"]
 
-        tid = create_ticket(company_id, name, phone, original_message)
+            PENDING_CONTACT.pop(user_id)
 
-        return ChatOut(
-            reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
-            escalated=True,
-            ticket_id=tid
-        )
+            tid = create_ticket(company_id, name, phone, original_message)
+
+            return ChatOut(
+                reply=f"Obrigado! Encaminhei seu atendimento para um atendente humano 😊 (Ticket #{tid})",
+                escalated=True,
+                ticket_id=tid
+            )
 
     # =========================
     # NÃO ENTENDEU → REPETE
