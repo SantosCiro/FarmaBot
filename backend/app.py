@@ -196,12 +196,12 @@ def chat(company_slug: str, payload: ChatIn):
                 ticket_id=tid
             )
 
-    # =========================
-    # NÃO ENTENDEU → REPETE
-    # =========================
-    return ChatOut(
-        reply="Pode me informar seu *telefone* para continuar? 😊"
-    )
+        # =========================
+        # NÃO ENTENDEU → REPETE
+        # =========================
+        return ChatOut(
+            reply="Pode me informar seu *telefone* para continuar? 😊"
+        )
 
     # =========================
     # 2. ESCALAR (ANTES DE TUDO)
