@@ -70,7 +70,7 @@
     document.getElementById("chatLink").href = `/?c=${company}`;
     document.getElementById("ticketsLink").href = `tickets.html?c=${company}`;
     document.getElementById("faqLink").href = `faq.html?c=${company}`;
-    document.getElementById("companyLabel").textContent = `Empresa: ${company}`;
+    document.getElementById("companyLabel").textContent = `Empresa: ${company.toUpperCase()}`;
     const chat = document.getElementById("chat");
     const text = document.getElementById("text");
     const sendBtn = document.getElementById("send");
@@ -104,7 +104,7 @@
       }
     }
 
-    addMsg("bot", "Olá! 👋 Sou o assistente virtual da farmácia. Posso ajudar com horário, entrega/retirada, disponibilidade de medicamentos e endereço/contato.");
+    addMsg("bot", `Olá! 👋 Sou o assistente virtual da ${company.toUpperCase()}. Posso te ajudar com horário, entrega, endereço e dúvidas frequentes.`);
 
     sendBtn.addEventListener("click", send);
     text.addEventListener("keydown", (e) => {
