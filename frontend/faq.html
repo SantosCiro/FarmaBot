@@ -6,14 +6,11 @@
 <title>FarmaBot - FAQ Admin</title>
 
 <style>
-
 body{
   font-family: Arial, sans-serif;
   background:#f2f2f2;
   margin:0;
 }
-
-/* NAVBAR */
 
 .nav{
   background:#0f172a;
@@ -33,10 +30,8 @@ body{
   text-decoration:underline;
 }
 
-/* LAYOUT */
-
 .wrap{
-  max-width:900px;
+  max-width:1000px;
   margin:0 auto;
   padding:16px;
   padding-top:12px;
@@ -85,8 +80,6 @@ button:hover{
   opacity:.9;
 }
 
-/* TABELA */
-
 table{
   width:100%;
   border-collapse:collapse;
@@ -97,12 +90,18 @@ th,td{
   border-bottom:1px solid #eee;
   padding:10px;
   text-align:left;
+  vertical-align:top;
 }
 
 th{
   background:#f7f7f7;
 }
 
+.small{
+  color:#666;
+  font-size:12px;
+  margin-top:8px;
+}
 </style>
 </head>
 
@@ -117,124 +116,143 @@ th{
 </div>
 
 <div class="wrap">
+  <div class="card">
+    <h2>Gerenciar FAQ</h2>
+    <div class="small">
+      Use este painel para cadastrar apenas informações fixas da farmácia, como horário, entrega, endereço e dúvidas gerais.
+      Não cadastre disponibilidade de medicamento ou produto no FAQ.
+    </div>
 
-<div class="card">
+    <div class="row" style="margin-top:12px;">
+      <input id="keywords" placeholder="Palavras-chave (ex: horario|abre|funciona)">
+    </div>
 
-<h2>Gerenciar FAQ</h2>
+    <div class="row">
+      <textarea id="answer" rows="3" placeholder="Resposta"></textarea>
+    </div>
 
-<div class="row">
-<input id="keywords" placeholder="Palavras-chave (ex: horario|abre|fecha)">
-</div>
+    <div class="row">
+      <button onclick="createFAQ()">Adicionar FAQ</button>
+      <button onclick="loadFAQ()">Atualizar</button>
+    </div>
 
-<div class="row">
-<textarea id="answer" rows="3" placeholder="Resposta"></textarea>
-</div>
-
-<div class="row">
-<button onclick="createFAQ()">Adicionar FAQ</button>
-<button onclick="loadFAQ()">Atualizar</button>
-</div>
-
-<table>
-
-<thead>
-<tr>
-<th>ID</th>
-<th>Keywords</th>
-<th>Resposta</th>
-<th>Criado em</th>
-</tr>
-</thead>
-
-<tbody id="faq"></tbody>
-
-</table>
-
-</div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Keywords</th>
+          <th>Resposta</th>
+          <th>Criado em</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="faq"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-
 const API = window.location.origin;
 
 const params = new URLSearchParams(window.location.search);
 const company = params.get("c") || "poupalar";
+
 document.getElementById("chatLink").href = `/?c=${company}`;
 document.getElementById("ticketsLink").href = `tickets.html?c=${company}`;
 document.getElementById("faqLink").href = `faq.html?c=${company}`;
-document.getElementById("companyLabel").textContent = `Empresa: ${company}`;
+document.getElementById("companyLabel").textContent = `Empresa: ${company.toUpperCase()}`;
 
 async function loadFAQ(){
-
   try{
+    const res = await fetch(`${API}/${company}/faq`);
+    const data = await res.json();
 
-    const res=await fetch(`${API}/${company}/faq`)
-    const data=await res.json()
+    const tbody = document.getElementById("faq");
+    tbody.innerHTML = "";
 
-    const tbody=document.getElementById("faq")
-    tbody.innerHTML=""
+    (data.faq || []).forEach(f => {
+      const tr = document.createElement("tr");
 
-    data.faq.forEach(f=>{
+      tr.innerHTML = `
+        <td>${f.id}</td>
+        <td>${f.keywords}</td>
+        <td>${f.answer}</td>
+        <td>${f.created_at || "-"}</td>
+        <td>
+          <button onclick="removeFAQ(${f.id})">Excluir</button>
+        </td>
+      `;
 
-      const tr=document.createElement("tr")
-
-      tr.innerHTML=`
-      <td>${f.id}</td>
-      <td>${f.keywords}</td>
-      <td>${f.answer}</td>
-      <td>${f.created_at || "-"}</td>
-      `
-
-      tbody.appendChild(tr)
-
-    })
+      tbody.appendChild(tr);
+    });
 
   }catch(e){
-
-    alert("Erro ao conectar na API. Backend está rodando?")
-
+    alert("Erro ao conectar na API. Backend está rodando?");
   }
-
 }
 
 async function createFAQ(){
-
-  const keywords=document.getElementById("keywords").value.trim()
-  const answer=document.getElementById("answer").value.trim()
+  const keywords = document.getElementById("keywords").value.trim();
+  const answer = document.getElementById("answer").value.trim();
 
   if(!keywords || !answer){
-    alert("Preencha keywords e resposta")
-    return
+    alert("Preencha keywords e resposta");
+    return;
   }
 
   try{
-
-    await fetch(`${API}/${company}/faq`,{
+    const res = await fetch(`${API}/${company}/faq`, {
       method:"POST",
       headers:{
         "Content-Type":"application/json"
       },
       body:JSON.stringify({
-        keywords:keywords,
-        answer:answer
+        keywords: keywords,
+        answer: answer
       })
-    })
+    });
 
-    document.getElementById("keywords").value=""
-    document.getElementById("answer").value=""
+    const data = await res.json();
 
-    loadFAQ()
+    if(!data.ok){
+      alert("Não foi possível salvar o FAQ.");
+      return;
+    }
+
+    document.getElementById("keywords").value = "";
+    document.getElementById("answer").value = "";
+
+    loadFAQ();
 
   }catch(e){
-
-    alert("Erro ao salvar FAQ")
-
+    alert("Erro ao salvar FAQ");
   }
-
 }
 
-loadFAQ()
+async function removeFAQ(faqId){
+  const confirmed = confirm("Deseja realmente excluir este FAQ?");
+  if(!confirmed) return;
 
+  try{
+    const res = await fetch(`${API}/faq/${faqId}`, {
+      method:"DELETE"
+    });
+
+    const data = await res.json();
+
+    if(!data.ok){
+      alert("Não foi possível excluir o FAQ.");
+      return;
+    }
+
+    loadFAQ();
+
+  }catch(e){
+    alert("Erro ao excluir FAQ");
+  }
+}
+
+loadFAQ();
 </script>
 
 </body>
