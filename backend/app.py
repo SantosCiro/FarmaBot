@@ -1,4 +1,3 @@
-import json
 import re
 import unicodedata
 
@@ -17,8 +16,10 @@ from db import (
     get_or_create_company,
     create_ticket,
     list_tickets,
+    update_ticket_status,
     list_faq,
     add_faq,
+    delete_faq,
 )
 
 client = OpenAI()
@@ -26,8 +27,15 @@ BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
 ESCALATE_KEYWORDS = [
-    "humano", "atendente", "pessoa", "urgente", "reclama", "reclamação",
-    "problema", "não resolveu", "não entendi", "falar com atendente", "suporte"
+    "humano", "atendente", "pessoa", "urgente", "reclama", "reclamacao",
+    "problema", "nao resolveu", "nao entendi", "falar com atendente", "suporte"
+]
+
+PRODUCT_KEYWORDS = [
+    "tem ", "voce tem", "voces tem", "tem o", "tem a", "tem os", "tem as",
+    "possui", "disponivel", "disponibilidade", "medicamento", "remedio",
+    "frasco", "caixa", "dorflex", "dipirona", "paracetamol", "clonazepam",
+    "fralda", "pomada", "xarope"
 ]
 
 
@@ -48,6 +56,10 @@ class FaqIn(BaseModel):
     answer: str
 
 
+class TicketStatusIn(BaseModel):
+    status: str
+
+
 app = FastAPI(title="FarmaBot MVP")
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
@@ -59,26 +71,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# guarda usuários que precisam informar dados antes de abrir ticket
 PENDING_CONTACT = {}
 
 
 def normalize(text: str) -> str:
     text = text.lower().strip()
-
-    # remove acentos
     text = unicodedata.normalize("NFKD", text)
     text = "".join(c for c in text if not unicodedata.combining(c))
-
-    # remove espaços extras
     text = re.sub(r"\s+", " ", text)
-
     return text
 
 
 def should_escalate(msg: str) -> bool:
     m = normalize(msg)
     return any(k in m for k in ESCALATE_KEYWORDS)
+
+
+def is_product_question(msg: str) -> bool:
+    m = normalize(msg)
+    return any(k in m for k in PRODUCT_KEYWORDS)
 
 
 def best_faq_answer(company_id: int, msg: str):
@@ -105,6 +116,7 @@ def best_faq_answer(company_id: int, msg: str):
 
     return None, 0
 
+
 def ai_answer(company_id: int, message: str) -> str:
     try:
         faq_items = list_faq(company_id)
@@ -119,13 +131,17 @@ def ai_answer(company_id: int, message: str) -> str:
                 {
                     "role": "system",
                     "content": f"""
-Você é um atendente de farmácia.
+Você é um atendente virtual de farmácia.
 
 Use apenas as informações abaixo para responder:
 
 {faq_text}
 
-Se a resposta não estiver no FAQ, diga que não tem essa informação e ofereça encaminhar para um atendente.
+Regras:
+- Responda apenas dúvidas gerais da farmácia.
+- Não confirme disponibilidade de medicamentos ou produtos.
+- Se a pergunta for sobre estoque, produto, medicamento ou preço, diga que precisa encaminhar para um atendente.
+- Se a resposta não estiver no FAQ, diga que não tem essa informação e ofereça encaminhar para um atendente.
 """
                 },
                 {
@@ -142,6 +158,7 @@ Se a resposta não estiver no FAQ, diga que não tem essa informação e ofereç
         print("ERRO IA:", e)
         return None
 
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -157,25 +174,17 @@ def chat(company_slug: str, payload: ChatIn):
 
     user_id = company_slug
 
-    # =========================
-    # 1. Se está aguardando contato
-    # =========================
+    # 1. fluxo de coleta de contato
     if user_id in PENDING_CONTACT:
         data = PENDING_CONTACT[user_id]
         digits = re.sub(r"\D", "", msg)
 
-        # =========================
-        # NÃO TEM NOME AINDA → CAPTURA
-        # =========================
         if not data.get("name") and len(digits) < 8:
             data["name"] = msg.strip()
             return ChatOut(
                 reply="Perfeito! Agora preciso do seu *telefone* 😊"
             )
 
-        # =========================
-        # TEM TELEFONE → FINALIZA
-        # =========================
         if len(digits) >= 8:
             phone = digits
 
@@ -183,7 +192,6 @@ def chat(company_slug: str, payload: ChatIn):
                 phone = phone[2:]
 
             name = data.get("name") or "Cliente"
-
             original_message = data["message"]
 
             PENDING_CONTACT.pop(user_id)
@@ -196,41 +204,56 @@ def chat(company_slug: str, payload: ChatIn):
                 ticket_id=tid
             )
 
-        # =========================
-        # NÃO ENTENDEU → REPETE
-        # =========================
         return ChatOut(
             reply="Pode me informar seu *telefone* para continuar? 😊"
         )
 
-    # =========================
-    # 2. ESCALAR (ANTES DE TUDO)
-    # =========================
+    # 2. perguntas de produto/medicamento vão para humano
+    if is_product_question(msg):
+        PENDING_CONTACT[user_id] = {"message": msg}
+        return ChatOut(
+            reply="Para confirmar disponibilidade de medicamento ou produto, preciso encaminhar seu atendimento para a equipe. Pode me informar seu *nome* e *telefone*? 😊"
+        )
+
+    # 3. pedido explícito de humano
     if should_escalate(msg):
         PENDING_CONTACT[user_id] = {"message": msg}
         return ChatOut(
             reply="Certo! Para te encaminhar, pode me informar seu *nome* e *telefone*? 😊"
         )
 
-    # =========================
-    # 3. FAQ
-    # =========================
+    # 4. FAQ
     answer, _ = best_faq_answer(company_id, msg)
     if answer:
         return ChatOut(reply=answer)
 
-    # =========================
-    # 4. IA
-    # =========================
+    # 5. IA
     ai_reply = ai_answer(company_id, msg)
     if ai_reply:
         return ChatOut(reply=ai_reply)
 
+    # 6. fallback
+    return ChatOut(
+        reply="Não consegui te ajudar com essa dúvida agora. Se quiser, posso encaminhar para um atendente 😊"
+    )
+
 
 @app.get("/{company_slug}/tickets")
-def tickets(company_slug: str, limit: int = 50):
+def tickets(company_slug: str):
     company_id = get_or_create_company(company_slug)
     return {"tickets": list_tickets(company_id)}
+
+
+@app.put("/{company_slug}/tickets/{ticket_id}/status")
+def ticket_status(company_slug: str, ticket_id: int, payload: TicketStatusIn):
+    status = payload.status.strip().lower()
+
+    if status not in ("open", "closed"):
+        return {"ok": False, "error": "invalid_status"}
+
+    get_or_create_company(company_slug)
+    ok = update_ticket_status(ticket_id, status)
+    return {"ok": ok}
 
 
 @app.get("/{company_slug}/faq")
@@ -245,9 +268,17 @@ def create_faq(company_slug: str, payload: FaqIn):
     faq_id = add_faq(company_id, payload.keywords.strip(), payload.answer.strip())
     return {"ok": True, "id": faq_id}
 
+
+@app.delete("/faq/{faq_id}")
+def remove_faq(faq_id: int):
+    ok = delete_faq(faq_id)
+    return {"ok": ok}
+
+
 @app.get("/")
 def home():
     return FileResponse(FRONTEND_DIR / "index.html")
+
 
 @app.get("/tickets.html")
 def tickets_page():

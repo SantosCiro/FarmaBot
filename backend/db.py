@@ -100,7 +100,9 @@ def list_tickets(company_id):
         SELECT id, created_at, name, phone, message, status
         FROM tickets
         WHERE company_id=%s
-        ORDER BY id DESC
+        ORDER BY
+            CASE WHEN status = 'open' THEN 0 ELSE 1 END,
+            id DESC
     """, (company_id,))
 
     rows = cur.fetchall()
@@ -109,16 +111,34 @@ def list_tickets(company_id):
     conn.close()
 
     return [
-    {
-        "id": r[0],
-        "created_at": r[1],
-        "name": r[2],
-        "phone": r[3],
-        "message": r[4],
-        "status": r[5]
-    }
-    for r in rows
-]
+        {
+            "id": r[0],
+            "created_at": r[1],
+            "name": r[2],
+            "phone": r[3],
+            "message": r[4],
+            "status": r[5]
+        }
+        for r in rows
+    ]
+
+def update_ticket_status(ticket_id, status):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE tickets
+        SET status=%s
+        WHERE id=%s
+    """, (status, ticket_id))
+
+    conn.commit()
+    ok = cur.rowcount > 0
+
+    cur.close()
+    conn.close()
+
+    return ok
 
 # =========================
 # FAQ
@@ -131,11 +151,16 @@ def add_faq(company_id, keywords, answer):
     cur.execute("""
         INSERT INTO faq (company_id, keywords, answer)
         VALUES (%s, %s, %s)
+        RETURNING id
     """, (company_id, keywords, answer))
+
+    faq_id = cur.fetchone()[0]
 
     conn.commit()
     cur.close()
     conn.close()
+
+    return faq_id
 
 def list_faq(company_id):
     conn = get_conn()
@@ -153,7 +178,6 @@ def list_faq(company_id):
     cur.close()
     conn.close()
 
-    # transforma em dict (compatível com seu código atual)
     return [
         {
             "id": r[0],
@@ -163,3 +187,17 @@ def list_faq(company_id):
         }
         for r in rows
     ]
+
+def delete_faq(faq_id):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM faq WHERE id=%s", (faq_id,))
+
+    conn.commit()
+    ok = cur.rowcount > 0
+
+    cur.close()
+    conn.close()
+
+    return ok
